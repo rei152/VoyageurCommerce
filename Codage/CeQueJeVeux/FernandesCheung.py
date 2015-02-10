@@ -9,42 +9,75 @@ import copy
 from pygame.locals import KEYDOWN, QUIT, MOUSEBUTTONDOWN, K_RETURN, K_ESCAPE
 import sys
 
+#GLOBAL VARIABLES
 screen_x = 500
 screen_y = 500
-
-pygame.init()
-window = pygame.display.set_mode((screen_x, screen_y))
-pygame.display.set_caption('Travelling salesman problem')
-screen = pygame.display.get_surface()
-font = pygame.font.Font(None,30)
-
+screen = None
+font = None
 city_color = [10,10,200] # blue
 city_radius = 3
-
 font_color = [255,255,255] # white
-
 cities = []
 
-def draw_scene():
+def fromFile(file):
+    #Load cities from file
+    f = open(file, 'r')
+    cities.clear()
+    for line in f:
+        comp = line.rstrip('\n').split(' ')
+        city = ((int(comp[1]), int(comp[2])))
+        cities.append(city)
 
-    #listCities = []
-    #count = 0
+    return cities
 
-    draw(cities)
+def loadGUI():
+    global screen, font
+    pygame.init()
+    pygame.display.set_mode((screen_x, screen_y))
+    pygame.display.set_caption('Travelling salesman problem')
+    screen = pygame.display.get_surface()
+    font = pygame.font.Font(None,30)
+
+def byText():
+    global screen, gui
+    gui = True
+
+    if screen is None:
+        gui = False
+        loadGUI()
 
     collecting = True
-
     while collecting:
         for event in pygame.event.get():
             if event.type == QUIT:
                 sys.exit(0)
             elif event.type == KEYDOWN and event.key == K_RETURN:
                 collecting = False
+                drawLines()
+            draw_cities(cities)
+
+def byMouse():
+    global screen, gui
+    gui = True
+
+    if screen is None:
+        gui = False
+        loadGUI()
+
+    collecting = True
+    while collecting:
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                sys.exit(0)
+            elif event.type == KEYDOWN and event.key == K_RETURN:
+                collecting = False
+                drawLines()
             elif event.type == MOUSEBUTTONDOWN:
                 cities.append(pygame.mouse.get_pos())
-                draw(cities)
+                draw_cities(cities)
 
-    screen.fill(0)
+def drawLines():
+    #screen.fill(0)
     pygame.draw.lines(screen,city_color,True,cities)
     text = font.render("Un chemin, pas le meilleur!", True, font_color)
     textRect = text.get_rect()
@@ -55,22 +88,21 @@ def draw_scene():
         event = pygame.event.wait()
         if event.type == KEYDOWN: break
 
+def draw_cities(positions):
+    """Draw the cities passed in argument to the GUI"""
+    # GUI mode selected
 
-def draw(positions):
+    global screen, city_radius, font_color
+    if screen is not None:
+        screen.fill(0)
+        for pos in range(0, len(positions)):
+            print(positions[pos])
+            pygame.draw.circle(screen, city_color, positions[pos], city_radius)
+            myCityName = font.render("City %i : [%i %i]" %(pos, positions[pos][0], positions[pos][1]), True, font_color)
+            cityNameRec = positions[pos]
+            screen.blit(myCityName, cityNameRec)
 
-    screen.fill(0)
-
-    for pos in range(0, len(positions)):
-        pygame.draw.circle(screen,city_color,positions[pos],city_radius)
-        myCityName = font.render("City %i : [%i %i]" %(pos, positions[pos][0], positions[pos][1]), True, font_color)
-        cityNameRec = positions[pos]
-        screen.blit(myCityName,cityNameRec)
-
-    text = font.render("Nombre: %i" % len(positions), True, font_color)
-    textRect = text.get_rect()
-    screen.blit(text, textRect)
-    pygame.display.flip()
-
+        pygame.display.flip()
 
 class Ville():
     def __init__(self, nom, x, y):
@@ -159,6 +191,26 @@ def ga_solve(file = None, gui = True, maxtime = 0):
 
 if __name__ == "__main__":
 # nom, x, y):
+    gui = True
+    file = None
+    try:
+        file = sys.argv[1]
+
+    except IndexError:
+    #     # aucun arguement
+        print("Sans fichier")
+    #     draw_scene()
+    #     sys.exit(1)
+
+    if gui:
+        loadGUI()
+    if file is not None:
+        cities = fromFile(file)
+        byText()
+    else:
+        byMouse()
+    draw_cities(cities)
+
     a = Ville("a",5,10)
     b = Ville("b",1,10)
     c = Ville("c",5,17)
